@@ -17,7 +17,7 @@ export function createServer(licenseKey: string) {
 
   const server = new Server(
     {
-      name: "mcp-untitledui",
+      name: "untitledui-mcp",
       version: "0.1.0",
     },
     {

@@ -1,17 +1,17 @@
-# mcp-untitledui
+# untitledui-mcp
 
 MCP server for UntitledUI Pro components. Provides AI agents with access to browse, search, and retrieve UI components.
 
 ## Installation
 
 ```bash
-npm install -g mcp-untitledui
+npm install -g untitledui-mcp
 ```
 
 Or use directly via npx:
 
 ```bash
-npx mcp-untitledui
+npx untitledui-mcp
 ```
 
 ## Configuration
@@ -30,23 +30,23 @@ The MCP server will automatically use your saved license key.
 
 ```bash
 export UNTITLEDUI_LICENSE_KEY=your_key_here
-npx mcp-untitledui
+npx untitledui-mcp
 ```
 
 ### Option 3: CLI Argument
 
 ```bash
-npx mcp-untitledui --license-key your_key_here
+npx untitledui-mcp --license-key your_key_here
 ```
 
 ## Claude Code Integration
 
 ```bash
 # Add to Claude Code
-claude mcp add untitledui npx mcp-untitledui
+claude mcp add untitledui npx untitledui-mcp
 
 # Or with explicit key
-claude mcp add untitledui npx mcp-untitledui --license-key YOUR_KEY
+claude mcp add untitledui npx untitledui-mcp --license-key YOUR_KEY
 ```
 
 ## Available Tools
@@ -66,7 +66,7 @@ claude mcp add untitledui npx mcp-untitledui --license-key YOUR_KEY
 ## Testing
 
 ```bash
-npx mcp-untitledui --test
+npx untitledui-mcp --test
 ```
 
 ## License

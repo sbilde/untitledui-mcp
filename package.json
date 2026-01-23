@@ -1,11 +1,19 @@
 {
-  "name": "mcp-untitledui",
+  "name": "untitledui-mcp",
   "version": "0.1.0",
-  "description": "MCP server for UntitledUI Pro components",
+  "description": "MCP server for UntitledUI Pro components - browse, search, and retrieve UI components via Claude Code",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "mcp-untitledui": "dist/index.js"
+    "untitledui-mcp": "dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/steffenbilde/untitledui-mcp"
+  },
+  "homepage": "https://github.com/steffenbilde/untitledui-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/steffenbilde/untitledui-mcp/issues"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
