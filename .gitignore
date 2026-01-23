@@ -1,4 +1,16 @@
-.worktrees/
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Environment
 .env
+
+# Private/local only
+docs/
+inspiration/
+.worktrees/
+
+# OS files
+.DS_Store
