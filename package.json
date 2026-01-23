@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/steffenbilde/untitledui-mcp"
+    "url": "https://github.com/sbilde/untitledui-mcp"
   },
-  "homepage": "https://github.com/steffenbilde/untitledui-mcp#readme",
+  "homepage": "https://github.com/sbilde/untitledui-mcp#readme",
   "bugs": {
-    "url": "https://github.com/steffenbilde/untitledui-mcp/issues"
+    "url": "https://github.com/sbilde/untitledui-mcp/issues"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
