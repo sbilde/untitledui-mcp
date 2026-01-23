@@ -11,6 +11,14 @@ dist/
 docs/
 inspiration/
 .worktrees/
+.mcp.json
+.claude/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # OS files
 .DS_Store
