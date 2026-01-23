@@ -2,7 +2,16 @@
 
 ![UntitledUI MCP](assets/cover.png)
 
-MCP server that gives AI assistants access to the UntitledUI component library. Search, browse, and retrieve production-ready React components with full dependency resolution.
+MCP server that gives AI assistants direct access to the UntitledUI component library. Browse, search, and retrieve React components with automatic dependency resolution.
+
+## What You Get
+
+- **500+ marketing sections** — Hero, pricing, testimonials, FAQ, CTA, features, footers
+- **40+ application components** — Modals, sidebars, tables, forms, metrics, charts
+- **75+ component variants** — Multiple versions of modals, slideouts, headers
+- **30 base primitives** — Button, input, select, avatar, badge, tooltip
+- **Complete page templates** — Full dashboard and marketing page examples
+- **Automatic dependency resolution** — Request a modal, get all required base components
 
 ## Setup
 
@@ -12,7 +21,7 @@ MCP server that gives AI assistants access to the UntitledUI component library. 
 npx untitledui@latest login
 ```
 
-This opens your browser to authenticate with UntitledUI and saves your license key to `~/.untitledui/config.json`.
+Opens your browser to authenticate. Saves license key to `~/.untitledui/config.json`.
 
 ### 2. Add to your AI tool
 
@@ -38,7 +47,7 @@ claude mcp add untitledui -- npx untitledui-mcp
 }
 ```
 
-> Replace `<your-key>` with the value from `~/.untitledui/config.json`, or omit the `env` field if you've already run `npx untitledui login`.
+> Omit the `env` field if you've run `npx untitledui@latest login` — the key is auto-detected.
 
 ### 3. Verify
 
@@ -46,100 +55,203 @@ claude mcp add untitledui -- npx untitledui-mcp
 npx untitledui-mcp --test
 ```
 
-```
-✓ License key is valid
-✓ API connection successful
-✓ 5 component types available
-✓ Ready to serve
-```
-
 ## Tools
+
+### Discovery
 
 | Tool | Purpose |
 |------|---------|
-| `search_components` | Fuzzy search across all components |
-| `get_component_with_deps` | Fetch component with all base dependencies |
-| `get_component` | Fetch single component |
-| `list_components` | Browse components by category |
-| `list_component_types` | List categories (application, marketing, base, etc.) |
-| `list_examples` | List page templates |
-| `get_example` | Fetch complete page template |
+| `search_components` | Fuzzy search across all 600+ components |
+| `list_component_types` | List categories: application, marketing, base, foundations, shared-assets |
+| `list_components` | Browse components in a category, with optional subfolder drilling |
+| `list_examples` | List available page templates |
+
+### Fetching
+
+| Tool | Purpose |
+|------|---------|
+| `get_component` | Fetch single component only (no dependencies) |
+| `get_component_with_deps` | Fetch component + all base dependencies (recommended) |
+| `get_example` | Fetch complete page template with all files |
+
+### Utility
+
+| Tool | Purpose |
+|------|---------|
+| `validate_license` | Check license key status |
+| `clear_cache` | Clear cached data (with optional pattern) |
 
 ## Usage Examples
 
-### Search and fetch a component
+### Get a specific component with dependencies
 
 ```
-User: "Add a command palette modal"
+User: "Add the AI assistant modal"
 
-AI calls: search_components { query: "command palette" }
-AI calls: get_component_with_deps { type: "application", name: "modals/command-modal" }
-→ Returns component code + button, input, kbd base components
+AI calls: get_component_with_deps { type: "application", name: "modals/ai-assistant-modal" }
+
+→ Returns:
+  - ai-assistant-modal.tsx (primary component)
+  - button.tsx, input.tsx, avatar.tsx (base dependencies)
+  - All npm dependencies: @headlessui/react, clsx, etc.
 ```
 
-### Browse available modals
+### Browse component variants
 
 ```
-User: "What modal components are available?"
+User: "What modal options are there?"
 
 AI calls: list_components { type: "application", subfolder: "modals" }
-→ Returns: ai-assistant-modal, command-modal, confirmation-modal, ...
+
+→ Returns 20+ variants:
+  - ai-assistant-modal
+  - command-modal
+  - confirmation-modal
+  - cookie-settings-modal
+  - file-upload-modal
+  - ...
 ```
 
-### Get a page template
+### Search across everything
 
 ```
-User: "Start with the dashboard example"
+User: "Find components for file uploads"
+
+AI calls: search_components { query: "file upload" }
+
+→ Returns matches from all categories:
+  - application/modals/file-upload-modal
+  - application/file-upload-states
+  - marketing/file-upload-sections/...
+```
+
+### Start with a complete template
+
+```
+User: "I need a dashboard starting point"
 
 AI calls: get_example { name: "application" }
-→ Returns complete dashboard with sidebar, header, metrics, tables
+
+→ Returns complete dashboard:
+  - Layout with sidebar + header
+  - Sample pages
+  - All required components
+  - npm dependencies
 ```
 
-### Marketing sections
+### Build a marketing page
 
 ```
-User: "Add a pricing section with monthly/annual toggle"
+User: "Add hero, features, and pricing sections"
 
-AI calls: search_components { query: "pricing toggle" }
-AI calls: get_component_with_deps { type: "marketing", name: "pricing-sections/two-tier-comparison" }
-→ Returns pricing component + dependencies
+AI calls: search_components { query: "hero" }
+AI calls: get_component_with_deps { type: "marketing", name: "hero-sections/split-with-image" }
+AI calls: get_component_with_deps { type: "marketing", name: "feature-sections/three-column-cards" }
+AI calls: get_component_with_deps { type: "marketing", name: "pricing-sections/three-tier-cards" }
+
+→ Returns each section with all dependencies
+```
+
+### Explicit fetch without dependencies
+
+```
+User: "Just get me the button component, I'll handle the rest"
+
+AI calls: get_component { type: "base", name: "button" }
+
+→ Returns only button.tsx
+→ Lists baseComponents but doesn't fetch them
 ```
 
 ## Component Categories
 
-| Category | Contents |
-|----------|----------|
-| `application` | Dashboards, modals, sidebars, tables, forms, metrics |
-| `marketing` | Hero, features, pricing, testimonials, FAQ, CTA, footer |
-| `base` | Button, input, select, checkbox, avatar, badge, tooltip |
-| `foundations` | Icons, logos |
-| `shared-assets` | Illustrations, mockups, patterns |
+| Category | Count | Contents |
+|----------|-------|----------|
+| `application` | 40+ components, 75+ variants | Modals, sidebars, slideouts, tables, forms, metrics, charts, headers |
+| `marketing` | 23 categories, 500+ variants | Hero, features, pricing, testimonials, FAQ, CTA, blog, team, contact, footer |
+| `base` | 30 components | Button, input, select, checkbox, radio, avatar, badge, tooltip, dropdown |
+| `foundations` | 10 | Icons, logos, color primitives |
+| `shared-assets` | 7 | Illustrations, mockups, patterns, decorative elements |
 
 ## Response Format
+
+### Single component (`get_component`)
+
+```json
+{
+  "name": "button",
+  "type": "base",
+  "files": [{ "path": "button.tsx", "code": "..." }],
+  "dependencies": ["@radix-ui/react-slot", "clsx"],
+  "baseComponents": []
+}
+```
+
+### Component with dependencies (`get_component_with_deps`)
 
 ```json
 {
   "primary": {
-    "name": "command-modal",
+    "name": "ai-assistant-modal",
     "type": "application",
-    "files": [{ "name": "command-modal.tsx", "content": "..." }],
-    "dependencies": ["@headlessui/react", "clsx"],
-    "baseComponents": ["button", "input", "kbd"]
+    "files": [{ "path": "ai-assistant-modal.tsx", "code": "..." }],
+    "baseComponents": ["button", "input", "avatar"]
   },
   "baseComponents": [
     { "name": "button", "files": [...] },
-    { "name": "input", "files": [...] }
+    { "name": "input", "files": [...] },
+    { "name": "avatar", "files": [...] }
   ],
-  "allDependencies": ["@headlessui/react", "clsx", "@radix-ui/react-slot"]
+  "allDependencies": ["@headlessui/react", "@radix-ui/react-slot", "clsx"],
+  "totalFiles": 4
 }
 ```
 
-## Pro vs Base Components
+### Search results
 
-- **Base components** (button, input, etc.) are included with all licenses
-- **Pro components** (modals, dashboards, marketing sections) require UntitledUI Pro
+```json
+{
+  "query": "date picker",
+  "results": [
+    { "name": "date-picker", "type": "application", "fullPath": "application/date-picker", "score": 1.0 },
+    { "name": "date-range-picker", "type": "application", "fullPath": "application/date-range-picker", "score": 0.9 }
+  ]
+}
+```
 
-If you request a Pro component without a Pro license, you'll get:
+### Not found (with suggestions)
+
+```json
+{
+  "error": "Component 'datepicker' not found",
+  "code": "NOT_FOUND",
+  "suggestions": [
+    "application/date-picker",
+    "application/date-range-picker"
+  ]
+}
+```
+
+## Caching
+
+Components are cached for the session:
+- Component lists: 1 hour
+- Component code: 24 hours
+- Search index: 30 minutes
+
+Clear cache manually:
+
+```
+AI calls: clear_cache { }                    → Clears everything
+AI calls: clear_cache { pattern: "component:" }  → Clears only component cache
+```
+
+## Pro vs Base
+
+- **Base components** work with any UntitledUI license
+- **Pro components** (application, marketing) require UntitledUI Pro
+
+Without Pro access:
 ```json
 { "error": "PRO access required for: modals/ai-assistant-modal" }
 ```
@@ -147,7 +259,7 @@ If you request a Pro component without a Pro license, you'll get:
 ## Requirements
 
 - Node.js 18+
-- UntitledUI license (free or Pro)
+- UntitledUI account (free for base, Pro for full library)
 
 ## License
 
