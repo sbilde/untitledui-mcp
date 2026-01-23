@@ -39,22 +39,26 @@ Config:
     }
   }
 
-  // Resolve license key
-  const licenseKey = resolveLicenseKey(cliLicenseKey);
-
-  if (!licenseKey) {
-    console.error("Error: No license key found.");
-    console.error("");
-    console.error("Please provide a license key via one of:");
-    console.error("  1. CLI argument: --license-key <key>");
-    console.error("  2. Environment: UNTITLEDUI_LICENSE_KEY=<key>");
-    console.error("  3. Login via CLI: npx untitledui login");
-    process.exit(1);
-  }
+  // Resolve license key (optional - some features work without it)
+  const licenseKey = resolveLicenseKey(cliLicenseKey) || "";
 
   // Test mode
   if (testMode) {
     console.log("Testing connection...");
+
+    if (!licenseKey) {
+      console.error("✗ No license key configured");
+      console.error("");
+      console.error("Get your license key:");
+      console.error("  npx untitledui login");
+      console.error("");
+      console.error("Then configure it via:");
+      console.error("  • Environment: UNTITLEDUI_LICENSE_KEY=<key>");
+      console.error("  • MCP config env field");
+      console.error("  • Auto-detected from ~/.untitledui/config.json");
+      process.exit(1);
+    }
+
     const client = new UntitledUIClient(licenseKey);
 
     const valid = await client.validateLicense();
@@ -74,6 +78,12 @@ Config:
       console.error("✗ API connection failed:", error);
       process.exit(1);
     }
+  }
+
+  // Warn if no license key
+  if (!licenseKey) {
+    console.error("Warning: No license key configured. API calls will fail.");
+    console.error("Run 'npx untitledui login' to authenticate.");
   }
 
   // Run server

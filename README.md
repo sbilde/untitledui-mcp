@@ -1,73 +1,153 @@
-# untitledui-mcp
+# UntitledUI MCP
 
-MCP server for UntitledUI Pro components. Provides AI agents with access to browse, search, and retrieve UI components.
+![UntitledUI MCP](assets/cover.png)
 
-## Installation
+MCP server that gives AI assistants access to the UntitledUI component library. Search, browse, and retrieve production-ready React components with full dependency resolution.
 
-```bash
-npm install -g untitledui-mcp
-```
+## Setup
 
-Or use directly via npx:
+### 1. Get your license key
 
 ```bash
-npx untitledui-mcp
+npx untitledui@latest login
 ```
 
-## Configuration
+This opens your browser to authenticate with UntitledUI and saves your license key to `~/.untitledui/config.json`.
 
-### Option 1: Auto-detect (Recommended)
+### 2. Add to your AI tool
 
-If you've already logged in via UntitledUI CLI:
+**Claude Code:**
 
 ```bash
-npx untitledui login
+claude mcp add untitledui -- npx untitledui-mcp
 ```
 
-The MCP server will automatically use your saved license key.
+**Cursor / VS Code** — add to `.cursor/mcp.json`:
 
-### Option 2: Environment Variable
-
-```bash
-export UNTITLEDUI_LICENSE_KEY=your_key_here
-npx untitledui-mcp
+```json
+{
+  "mcpServers": {
+    "untitledui": {
+      "command": "npx",
+      "args": ["untitledui-mcp"],
+      "env": {
+        "UNTITLEDUI_LICENSE_KEY": "<your-key>"
+      }
+    }
+  }
+}
 ```
 
-### Option 3: CLI Argument
+> Replace `<your-key>` with the value from `~/.untitledui/config.json`, or omit the `env` field if you've already run `npx untitledui login`.
 
-```bash
-npx untitledui-mcp --license-key your_key_here
-```
-
-## Claude Code Integration
-
-```bash
-# Add to Claude Code
-claude mcp add untitledui npx untitledui-mcp
-
-# Or with explicit key
-claude mcp add untitledui npx untitledui-mcp --license-key YOUR_KEY
-```
-
-## Available Tools
-
-| Tool | Description |
-|------|-------------|
-| `list_component_types` | List all component categories |
-| `list_components` | List components in a category |
-| `search_components` | Search components by name |
-| `get_component` | Get single component code |
-| `get_component_with_deps` | Get component with all dependencies |
-| `list_examples` | List page examples |
-| `get_example` | Get complete page example |
-| `validate_license` | Verify license key |
-| `clear_cache` | Clear cached data |
-
-## Testing
+### 3. Verify
 
 ```bash
 npx untitledui-mcp --test
 ```
+
+```
+✓ License key is valid
+✓ API connection successful
+✓ 5 component types available
+✓ Ready to serve
+```
+
+## Tools
+
+| Tool | Purpose |
+|------|---------|
+| `search_components` | Fuzzy search across all components |
+| `get_component_with_deps` | Fetch component with all base dependencies |
+| `get_component` | Fetch single component |
+| `list_components` | Browse components by category |
+| `list_component_types` | List categories (application, marketing, base, etc.) |
+| `list_examples` | List page templates |
+| `get_example` | Fetch complete page template |
+
+## Usage Examples
+
+### Search and fetch a component
+
+```
+User: "Add a command palette modal"
+
+AI calls: search_components { query: "command palette" }
+AI calls: get_component_with_deps { type: "application", name: "modals/command-modal" }
+→ Returns component code + button, input, kbd base components
+```
+
+### Browse available modals
+
+```
+User: "What modal components are available?"
+
+AI calls: list_components { type: "application", subfolder: "modals" }
+→ Returns: ai-assistant-modal, command-modal, confirmation-modal, ...
+```
+
+### Get a page template
+
+```
+User: "Start with the dashboard example"
+
+AI calls: get_example { name: "application" }
+→ Returns complete dashboard with sidebar, header, metrics, tables
+```
+
+### Marketing sections
+
+```
+User: "Add a pricing section with monthly/annual toggle"
+
+AI calls: search_components { query: "pricing toggle" }
+AI calls: get_component_with_deps { type: "marketing", name: "pricing-sections/two-tier-comparison" }
+→ Returns pricing component + dependencies
+```
+
+## Component Categories
+
+| Category | Contents |
+|----------|----------|
+| `application` | Dashboards, modals, sidebars, tables, forms, metrics |
+| `marketing` | Hero, features, pricing, testimonials, FAQ, CTA, footer |
+| `base` | Button, input, select, checkbox, avatar, badge, tooltip |
+| `foundations` | Icons, logos |
+| `shared-assets` | Illustrations, mockups, patterns |
+
+## Response Format
+
+```json
+{
+  "primary": {
+    "name": "command-modal",
+    "type": "application",
+    "files": [{ "name": "command-modal.tsx", "content": "..." }],
+    "dependencies": ["@headlessui/react", "clsx"],
+    "baseComponents": ["button", "input", "kbd"]
+  },
+  "baseComponents": [
+    { "name": "button", "files": [...] },
+    { "name": "input", "files": [...] }
+  ],
+  "allDependencies": ["@headlessui/react", "clsx", "@radix-ui/react-slot"]
+}
+```
+
+## Pro vs Base Components
+
+- **Base components** (button, input, etc.) are included with all licenses
+- **Pro components** (modals, dashboards, marketing sections) require UntitledUI Pro
+
+If you request a Pro component without a Pro license, you'll get:
+```json
+{ "error": "PRO access required for: modals/ai-assistant-modal" }
+```
+
+## Requirements
+
+- Node.js 18+
+- UntitledUI license (free or Pro)
 
 ## License
 
