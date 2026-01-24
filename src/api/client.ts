@@ -102,16 +102,86 @@ export class UntitledUIClient {
     return data.components;
   }
 
-  async fetchExample(name: string): Promise<ExampleResponse> {
+  /**
+   * Browse examples hierarchy or fetch example content.
+   * - "" → lists types (application, marketing)
+   * - "application" → lists examples (dashboards-01, settings-01, etc.)
+   * - "application/dashboards-01" → lists pages (01, 02, 03, ...)
+   * - "application/dashboards-01/01" → returns actual content
+   */
+  async fetchExample(path: string): Promise<ExampleResponse> {
     const response = await fetch(ENDPOINTS.fetchExample, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        example: name,
+        example: path,
         key: this.licenseKey,
       }),
     });
 
     return response.json();
+  }
+
+  /**
+   * Fetch all pages in an example and combine them.
+   * Path should be "application/dashboards-01" (without page number).
+   */
+  async fetchFullExample(examplePath: string): Promise<{
+    name: string;
+    pages: Array<{
+      page: string;
+      files: Array<{ path: string; code: string }>;
+      dependencies: string[];
+      devDependencies: string[];
+    }>;
+    allDependencies: string[];
+    allDevDependencies: string[];
+    totalFiles: number;
+  }> {
+    // First, list all pages in the example
+    const listing = await this.fetchExample(examplePath);
+
+    if (listing.type !== "directory" || !listing.results) {
+      throw new Error(`Invalid example path: ${examplePath}. Expected a directory with pages.`);
+    }
+
+    const pages = listing.results;
+    const allDeps = new Set<string>();
+    const allDevDeps = new Set<string>();
+    const fetchedPages: Array<{
+      page: string;
+      files: Array<{ path: string; code: string }>;
+      dependencies: string[];
+      devDependencies: string[];
+    }> = [];
+
+    // Fetch each page
+    for (const page of pages) {
+      const pageData = await this.fetchExample(`${examplePath}/${page}`);
+
+      if (pageData.type === "json-file" && pageData.content) {
+        const content = pageData.content;
+
+        fetchedPages.push({
+          page,
+          files: content.files || [],
+          dependencies: content.dependencies || [],
+          devDependencies: content.devDependencies || [],
+        });
+
+        content.dependencies?.forEach(d => allDeps.add(d));
+        content.devDependencies?.forEach(d => allDevDeps.add(d));
+      }
+    }
+
+    const totalFiles = fetchedPages.reduce((sum, p) => sum + p.files.length, 0);
+
+    return {
+      name: examplePath,
+      pages: fetchedPages,
+      allDependencies: Array.from(allDeps),
+      allDevDependencies: Array.from(allDevDeps),
+      totalFiles,
+    };
   }
 }

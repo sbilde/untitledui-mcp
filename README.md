@@ -74,7 +74,8 @@ Your AI gets these tools:
 | `list_components` | Browse a category |
 | `get_component_with_deps` | Fetch component + all dependencies |
 | `get_component` | Fetch component only |
-| `get_example` | Get complete page template |
+| `list_examples` | Browse available page templates |
+| `get_example` | Fetch a specific page template |
 
 ### Example: Add a modal
 
@@ -95,13 +96,22 @@ AI calls list_components { type: "application", subfolder: "sidebars" }
 → Returns all sidebar options for you to choose from
 ```
 
-### Example: Start from template
+### Example: Start from a page template
 
 ```
-You: "Set up a dashboard layout"
+You: "Show me available dashboard templates"
 
-AI calls get_example { name: "application" }
-→ Returns complete dashboard with sidebar, header, and sample pages
+AI calls list_examples { path: "" }
+→ Returns: application, marketing
+
+AI calls list_examples { path: "application" }
+→ Returns: dashboards-01, dashboards-02, settings-01, ...
+
+AI calls list_examples { path: "application/dashboards-01" }
+→ Returns: 01, 02, 03, ... (individual pages)
+
+AI calls get_example { path: "application/dashboards-01/01" }
+→ Returns complete page with 27 files, all dependencies
 ```
 
 ## Response Format

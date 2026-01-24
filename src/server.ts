@@ -120,18 +120,23 @@ export function createServer(licenseKey: string) {
       },
       {
         name: "list_examples",
-        description: "List available page examples (dashboards, marketing pages, etc.)",
-        inputSchema: { type: "object", properties: {} },
-      },
-      {
-        name: "get_example",
-        description: "Get a complete page example with all files",
+        description: "Browse available page examples. Call without path to see categories, then drill down.",
         inputSchema: {
           type: "object",
           properties: {
-            name: { type: "string", description: "Example name (e.g., 'application', 'marketing')" },
+            path: { type: "string", description: "Path to browse (e.g., '', 'application', 'application/dashboards-01')" },
           },
-          required: ["name"],
+        },
+      },
+      {
+        name: "get_example",
+        description: "Get a single example page with all files. Requires full path including page number.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", description: "Full path to example page (e.g., 'application/dashboards-01/01')" },
+          },
+          required: ["path"],
         },
       },
       {
@@ -287,29 +292,81 @@ export function createServer(licenseKey: string) {
         }
 
         case "list_examples": {
-          return {
-            content: [{
-              type: "text",
-              text: JSON.stringify({
-                examples: [
-                  { name: "application", type: "application", description: "Dashboard application example" },
-                  { name: "marketing", type: "marketing", description: "Marketing landing page example" },
-                ],
-              }, null, 2),
-            }],
-          };
+          const { path = "" } = args as { path?: string };
+          const cacheKey = `examples:list:${path}`;
+
+          let listing = cache.get(cacheKey);
+          if (!listing) {
+            listing = await client.fetchExample(path);
+            if (listing) {
+              cache.set(cacheKey, listing, CACHE_TTL.componentList);
+            }
+          }
+
+          // Format response based on type
+          if (listing.type === "directory" && listing.results) {
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  path: path || "(root)",
+                  type: "directory",
+                  items: listing.results,
+                  hint: path === ""
+                    ? "Use list_examples with path='application' or path='marketing' to see available examples"
+                    : path.split("/").length === 1
+                    ? `Use list_examples with path='${path}/<example>' to see pages`
+                    : `Use get_example with path='${path}/<page>' to fetch a specific page`,
+                }, null, 2),
+              }],
+            };
+          }
+
+          return { content: [{ type: "text", text: JSON.stringify(listing, null, 2) }] };
         }
 
         case "get_example": {
-          const { name: exampleName } = args as { name: string };
-          const cacheKey = `example:${exampleName}`;
+          const { path: examplePath } = args as { path: string };
+          const cacheKey = `example:${examplePath}`;
 
           let example = cache.get(cacheKey);
           if (!example) {
-            example = await client.fetchExample(exampleName);
+            example = await client.fetchExample(examplePath);
             if (example) {
               cache.set(cacheKey, example, CACHE_TTL.examples);
             }
+          }
+
+          // Check if we got actual content or just a directory listing
+          if (example.type === "directory") {
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  error: "Path is a directory, not a page",
+                  path: examplePath,
+                  availableItems: example.results,
+                  hint: `Use get_example with path='${examplePath}/<item>' to fetch a specific page`,
+                }, null, 2),
+              }],
+            };
+          }
+
+          if (example.type === "json-file" && example.content) {
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  path: examplePath,
+                  name: example.content.name,
+                  files: example.content.files,
+                  dependencies: example.content.dependencies || [],
+                  devDependencies: example.content.devDependencies || [],
+                  components: example.content.components || [],
+                  fileCount: example.content.files?.length || 0,
+                }, null, 2),
+              }],
+            };
           }
 
           return { content: [{ type: "text", text: JSON.stringify(example, null, 2) }] };
