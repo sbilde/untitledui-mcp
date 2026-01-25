@@ -198,11 +198,12 @@ Pro components depend on base components (button, input, etc.). When fetching a 
 
 ## Credits
 
-[UntitledUI](https://www.untitledui.com) is created by [Jordan Hughes](https://jordanhughes.co).
+[UntitledUI](https://www.untitledui.com?utm_source=untitledui-mcp&utm_medium=github&utm_campaign=readme) is created by [Jordan Hughes](https://jordanhughes.co?utm_source=untitledui-mcp&utm_medium=github&utm_campaign=readme).
 
 - [Twitter/X](https://x.com/jordanphughes)
 - [Dribbble](https://dribbble.com/jordanhughes)
 - [UntitledUI on X](https://x.com/UntitledUI)
+- [Get UntitledUI Pro](https://www.untitledui.com/pricing?utm_source=untitledui-mcp&utm_medium=github&utm_campaign=readme)
 
 ## License
 
