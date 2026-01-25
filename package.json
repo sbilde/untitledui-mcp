@@ -1,6 +1,6 @@
 {
   "name": "untitledui-mcp",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "MCP server for UntitledUI Pro components - browse, search, and retrieve UI components via Claude Code",
   "type": "module",
   "main": "dist/index.js",
@@ -25,7 +25,12 @@
     "test:watch": "vitest",
     "start": "node dist/index.js"
   },
-  "keywords": ["mcp", "untitledui", "ui-components", "claude"],
+  "keywords": [
+    "mcp",
+    "untitledui",
+    "ui-components",
+    "claude"
+  ],
   "author": "Steffen Bilde",
   "license": "MIT",
   "dependencies": {
