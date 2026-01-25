@@ -10,7 +10,13 @@ import { MemoryCache, CACHE_TTL } from "./cache/memory-cache.js";
 import { fuzzySearch, type SearchableItem } from "./utils/search.js";
 import { generateDescription } from "./utils/descriptions.js";
 import { getBaseComponentNames } from "./utils/parse-deps.js";
-import type { ComponentListItem, MCPComponentResponse } from "./api/types.js";
+import {
+  estimateComponentTokens,
+  getFileTokenList,
+  CLAUDE_READ_TOKEN_LIMIT,
+  isLikelyTooLarge,
+} from "./utils/tokens.js";
+import type { ComponentListItem, MCPComponentResponse, ComponentFile } from "./api/types.js";
 
 export function createServer(licenseKey: string) {
   const client = new UntitledUIClient(licenseKey);
@@ -97,7 +103,7 @@ export function createServer(licenseKey: string) {
       },
       {
         name: "get_component",
-        description: "Get a single component's code. Does NOT include dependencies - use get_component_with_deps for that.",
+        description: "Get a single component's code with token estimates. Returns estimatedTokens and file list. If estimatedTokens > 25000, consider using get_component_file for specific files instead.",
         inputSchema: {
           type: "object",
           properties: {
@@ -109,7 +115,7 @@ export function createServer(licenseKey: string) {
       },
       {
         name: "get_component_with_deps",
-        description: "Get a component with all its base component dependencies included",
+        description: "Get a component with all base dependencies. Returns estimatedTokens. If response is too large (>25000 tokens), use get_component_file to fetch specific files individually.",
         inputSchema: {
           type: "object",
           properties: {
@@ -117,6 +123,19 @@ export function createServer(licenseKey: string) {
             name: { type: "string", description: "Component name" },
           },
           required: ["type", "name"],
+        },
+      },
+      {
+        name: "get_component_file",
+        description: "Get a single file from a component. Use this when get_component or get_component_with_deps returns a large response (>25000 tokens). First call get_component to see the file list, then fetch specific files as needed.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            type: { type: "string", description: "Component type" },
+            name: { type: "string", description: "Component name" },
+            file: { type: "string", description: "File path within the component (e.g., 'Button.tsx' or 'variants/InputPhone.tsx')" },
+          },
+          required: ["type", "name", "file"],
         },
       },
       {
@@ -229,7 +248,23 @@ export function createServer(licenseKey: string) {
             cache.set(cacheKey, component, CACHE_TTL.componentCode);
           }
 
-          return { content: [{ type: "text", text: JSON.stringify(component, null, 2) }] };
+          // Add token estimates
+          const estimatedTokens = estimateComponentTokens(component.files);
+          const fileTokens = getFileTokenList(component.files);
+          const tooLarge = isLikelyTooLarge(estimatedTokens);
+
+          const result = {
+            ...component,
+            estimatedTokens,
+            fileCount: component.files.length,
+            fileList: fileTokens,
+            ...(tooLarge && {
+              warning: `Response is large (${estimatedTokens} tokens). Consider using get_component_file for specific files.`,
+              hint: "Use get_component_file with type, name, and file path to fetch individual files.",
+            }),
+          };
+
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
         }
 
         case "get_component_with_deps": {
@@ -268,12 +303,21 @@ export function createServer(licenseKey: string) {
             c.devDependencies?.forEach(d => allDevDeps.add(d));
           });
 
+          // Calculate token estimates
+          const allFiles = [
+            ...primary.files,
+            ...baseComponents.flatMap(c => c.files),
+          ];
+          const estimatedTokens = estimateComponentTokens(allFiles);
+          const tooLarge = isLikelyTooLarge(estimatedTokens);
+
           const result = {
             primary: {
               name: primary.name,
               type,
               description: generateDescription(primary.name, type),
               files: primary.files,
+              fileList: getFileTokenList(primary.files),
               dependencies: primary.dependencies || [],
               devDependencies: primary.devDependencies || [],
               baseComponents: baseComponentNames,
@@ -283,15 +327,86 @@ export function createServer(licenseKey: string) {
               type: "base",
               description: generateDescription(c.name, "base"),
               files: c.files,
+              fileList: getFileTokenList(c.files),
               dependencies: c.dependencies || [],
               devDependencies: c.devDependencies || [],
             })),
             totalFiles: primary.files.length + baseComponents.reduce((sum, c) => sum + c.files.length, 0),
+            estimatedTokens,
             allDependencies: Array.from(allDeps),
             allDevDependencies: Array.from(allDevDeps),
+            ...(tooLarge && {
+              warning: `Response is large (${estimatedTokens} tokens, limit is ${CLAUDE_READ_TOKEN_LIMIT}). Consider using get_component_file for specific files.`,
+              hint: "To fetch individual files, use get_component_file with the component type, name, and file path from fileList.",
+            }),
           };
 
           return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        }
+
+        case "get_component_file": {
+          const { type, name: componentName, file: filePath } = args as { type: string; name: string; file: string };
+          const cacheKey = `component:${type}:${componentName}`;
+
+          // Try to get from cache first, otherwise fetch
+          let files: ComponentFile[];
+          const cached = cache.get<MCPComponentResponse>(cacheKey);
+          if (cached) {
+            files = cached.files;
+          } else {
+            const fetched = await client.fetchComponent(type, componentName);
+            if (!fetched) {
+              const index = await buildSearchIndex();
+              const suggestions = fuzzySearch(componentName, index, 5).map(r => r.fullPath);
+              return {
+                content: [{
+                  type: "text",
+                  text: JSON.stringify({
+                    error: `Component "${componentName}" not found`,
+                    code: "NOT_FOUND",
+                    suggestions,
+                  }, null, 2),
+                }],
+              };
+            }
+            files = fetched.files;
+          }
+
+          // Find the requested file
+          const file = files.find(f =>
+            f.path === filePath ||
+            f.path.endsWith(`/${filePath}`) ||
+            f.path.endsWith(filePath)
+          );
+
+          if (!file) {
+            const availableFiles = files.map(f => f.path);
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  error: `File "${filePath}" not found in ${type}/${componentName}`,
+                  code: "FILE_NOT_FOUND",
+                  availableFiles,
+                  hint: "Use one of the file paths from availableFiles",
+                }, null, 2),
+              }],
+            };
+          }
+
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                component: `${type}/${componentName}`,
+                file: {
+                  path: file.path,
+                  code: file.code,
+                },
+                estimatedTokens: estimateComponentTokens([file]),
+              }, null, 2),
+            }],
+          };
         }
 
         case "list_examples": {
@@ -356,17 +471,26 @@ export function createServer(licenseKey: string) {
           }
 
           if (example.type === "json-file" && example.content) {
+            const files = example.content.files || [];
+            const estimatedTokens = estimateComponentTokens(files);
+            const tooLarge = isLikelyTooLarge(estimatedTokens);
+
             return {
               content: [{
                 type: "text",
                 text: JSON.stringify({
                   path: examplePath,
                   name: example.content.name,
-                  files: example.content.files,
+                  files,
+                  fileList: getFileTokenList(files),
                   dependencies: example.content.dependencies || [],
                   devDependencies: example.content.devDependencies || [],
                   components: example.content.components || [],
-                  fileCount: example.content.files?.length || 0,
+                  fileCount: files.length,
+                  estimatedTokens,
+                  ...(tooLarge && {
+                    warning: `Response is large (${estimatedTokens} tokens). Consider fetching specific component files instead.`,
+                  }),
                 }, null, 2),
               }],
             };
