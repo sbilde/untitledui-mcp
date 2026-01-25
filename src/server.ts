@@ -9,6 +9,7 @@ import { UntitledUIClient } from "./api/client.js";
 import { MemoryCache, CACHE_TTL } from "./cache/memory-cache.js";
 import { fuzzySearch, type SearchableItem } from "./utils/search.js";
 import { generateDescription } from "./utils/descriptions.js";
+import { getBaseComponentNames } from "./utils/parse-deps.js";
 import type { ComponentListItem, MCPComponentResponse } from "./api/types.js";
 
 export function createServer(licenseKey: string) {
@@ -223,7 +224,7 @@ export function createServer(licenseKey: string) {
               files: fetched.files,
               dependencies: fetched.dependencies || [],
               devDependencies: fetched.devDependencies || [],
-              baseComponents: (fetched.components || []).map(c => c.name),
+              baseComponents: getBaseComponentNames(fetched.files),
             };
             cache.set(cacheKey, component, CACHE_TTL.componentCode);
           }
@@ -250,8 +251,10 @@ export function createServer(licenseKey: string) {
             };
           }
 
+          // Parse base component dependencies from the code
+          const baseComponentNames = getBaseComponentNames(primary.files);
+
           // Fetch base components
-          const baseComponentNames = (primary.components || []).map(c => c.name);
           const baseComponents = baseComponentNames.length > 0
             ? await client.fetchComponents("base", baseComponentNames)
             : [];
