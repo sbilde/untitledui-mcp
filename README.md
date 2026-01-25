@@ -48,7 +48,7 @@ claude mcp add untitledui -- npx untitledui-mcp
   "mcpServers": {
     "untitledui": {
       "command": "npx",
-      "args": ["untitledui-mcp"]
+      "args": ["-y", "untitledui-mcp"]
     }
   }
 }
@@ -72,7 +72,7 @@ Alternatively, set the key manually in your MCP config:
   "mcpServers": {
     "untitledui": {
       "command": "npx",
-      "args": ["untitledui-mcp"],
+      "args": ["-y", "untitledui-mcp"],
       "env": {
         "UNTITLEDUI_LICENSE_KEY": "<your-key>"
       }
