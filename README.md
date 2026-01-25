@@ -114,43 +114,66 @@ Your AI gets these tools:
 | `list_examples` | Browse available page templates |
 | `get_example` | Fetch a complete page template |
 
-## Examples
+## What You Can Do
 
-### Add a modal
-
-```
-You: "Add a settings modal"
-
-AI searches → finds application/modals/settings-modal
-AI fetches → gets modal + button, input, select base components
-AI adds → places files in your project with correct imports
-```
-
-### Browse available options
+### Recreate Any UI from a Screenshot
 
 ```
-You: "What sidebar variants are there?"
+You: [paste screenshot] "Recreate this with UntitledUI components"
 
-AI calls list_components { type: "application", subfolder: "sidebars" }
-→ Returns all sidebar options for you to choose from
+AI analyzes the design → identifies matching components
+AI fetches sidebar, header, cards, tables → all with dependencies
+AI assembles → production-ready page matching your screenshot
 ```
 
-### Build from a page template
+### Build Complete Pages in Seconds
 
 ```
-You: "Show me available dashboard templates"
+You: "Build me a SaaS pricing page with 3 tiers and a FAQ section"
 
-AI calls list_examples { path: "" }
-→ Returns: application, marketing
+AI fetches marketing/pricing-sections + marketing/faq-sections
+AI combines components → complete pricing page with toggle for monthly/annual
+Result: Professional pricing page with all interactions working
+```
 
-AI calls list_examples { path: "application" }
-→ Returns: dashboards-01, dashboards-02, settings-01, ...
+### Set Up Your Entire App Shell
 
-AI calls list_examples { path: "application/dashboards-01" }
-→ Returns: 01, 02, 03, ... (individual pages)
+```
+You: "Set up the main app layout with collapsible sidebar and header with user dropdown"
+
+AI fetches application/sidebars + application/headers + base components
+AI wires up navigation state, theme toggle, user menu
+Result: Complete app shell ready for your content
+```
+
+### Clone a Page from UntitledUI's Templates
+
+```
+You: "I want a dashboard like the one in dashboards-01"
 
 AI calls get_example { path: "application/dashboards-01/01" }
-→ Returns complete page with all files and dependencies
+→ Returns 27 files: page layout, charts, tables, cards, all base components
+→ Ready to customize with your data
+```
+
+### Mix and Match Components
+
+```
+You: "Create a settings page with sections for profile, notifications, billing, and team members"
+
+AI searches → finds matching components for each section
+AI fetches settings panels, forms, tables, modals
+AI composes → cohesive settings page with consistent styling
+```
+
+### Rapid Feature Development
+
+```
+You: "Add a command palette like Linear/Notion with keyboard shortcut"
+
+AI fetches application/command-menus
+→ Complete command palette with search, keyboard navigation, sections
+→ Just wire up your actions
 ```
 
 ## Response Format
