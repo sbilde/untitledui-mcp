@@ -544,6 +544,7 @@ export function createServer(licenseKey: string) {
           type: "text",
           text: JSON.stringify({ error: message, code: "API_ERROR" }, null, 2),
         }],
+        isError: true,
       };
     }
   });
