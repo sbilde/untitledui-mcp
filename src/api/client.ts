@@ -66,16 +66,18 @@ export class UntitledUIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status} fetching ${type}/${name}`);
     }
 
     const data: ComponentsResponse = await response.json();
+    const component = data.components?.[0] || null;
 
-    if (data.pro && data.pro.length > 0) {
+    // Only check pro restriction if the component wasn't returned
+    if (!component && data.pro && data.pro.length > 0) {
       throw new Error(`PRO access required for: ${data.pro.join(", ")}`);
     }
 
-    return data.components[0] || null;
+    return component;
   }
 
   async fetchComponents(type: string, names: string[]): Promise<FetchedComponent[]> {
@@ -90,16 +92,18 @@ export class UntitledUIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status} fetching ${type}/${names.join(", ")}`);
     }
 
     const data: ComponentsResponse = await response.json();
+    const components = data.components || [];
 
-    if (data.pro && data.pro.length > 0) {
+    // Only check pro restriction for components that weren't returned
+    if (components.length === 0 && data.pro && data.pro.length > 0) {
       throw new Error(`PRO access required for: ${data.pro.join(", ")}`);
     }
 
-    return data.components;
+    return components;
   }
 
   /**
